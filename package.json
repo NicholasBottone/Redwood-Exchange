@@ -1,0 +1,25 @@
+{
+  "name": "redwood-project",
+  "version": "1.0.0",
+  "description": "REMIX EXAMPLE PROJECT",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NicholasBottone/Redwood-Project.git"
+  },
+  "author": "Nicholas Bottone",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NicholasBottone/Redwood-Project/issues"
+  },
+  "homepage": "https://github.com/NicholasBottone/Redwood-Project#readme",
+  "dependencies": {
+    "eth-heap": "^2.2.0"
+  }
+}
