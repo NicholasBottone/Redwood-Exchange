@@ -24,6 +24,16 @@ contract Pool {
     
     // todo: implement wallet functionality and trading functionality
 
+    // todo: implement withdraw and deposit functions so that a single deposit and a single withdraw can unstake
+    // both tokens at the same time
+    function deposit(uint tokenAmount, uint pineAmount){
+
+    }
+
+    function withdraw(uint tokenAmount, uint pineAmount){
+
+    }
+
     function testing(uint testMe) public view returns (uint) {
         if (testMe == 1) {
             return 5;
