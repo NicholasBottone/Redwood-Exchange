@@ -262,7 +262,7 @@
 		"compilationTarget": {
 			"contracts/libraries/token/ERC20/ERC20.sol": "ERC20"
 		},
-		"evmVersion": "byzantium",
+		"evmVersion": "constantinople",
 		"libraries": {},
 		"optimizer": {
 			"enabled": false,

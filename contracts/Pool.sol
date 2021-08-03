@@ -7,11 +7,11 @@ import '../contracts/libraries/math/SafeMath.sol';
 contract Pool {
     
     /// @notice some parameters for the pool to function correctly, feel free to add more as needed
-    address private tokenP;
-    address private token1;
-    address private dex;
-    bytes32 private tokenPT;
-    bytes32 private token1T;
+    address private tokenP; // pine address
+    address private token1; // other token address
+    address private dex; // exchange address
+    bytes32 private tokenPT; // pine ticker
+    bytes32 private token1T; // other token ticker
     
     // todo: create wallet data structures
     
@@ -19,7 +19,22 @@ contract Pool {
     // todo: fill in the initialize method, which should simply set the parameters of the contract correctly. To be called once
     // upon deployment by the factory.
     function initialize(address _token0, address _token1, address _dex, uint whichP, bytes32 _tickerQ, bytes32 _tickerT)
-    external {
+    external { // hypothetically done
+        
+        dex = _dex;
+        
+        if (whichP == 1) {
+            tokenP = _token0;
+            token1 = _token1;
+            tokenPT = _tickerQ;
+            token1T = _tickerT;
+        } else {
+            tokenP = _token1;
+            token1 = _token0;
+            tokenPT = _tickerT;
+            token1T = _tickerQ;
+        }
+        
     }
     
     // todo: implement wallet functionality and trading functionality
