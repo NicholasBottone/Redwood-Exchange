@@ -46,7 +46,7 @@ contract Exc is IExc{
     );
     
     // todo: implement getOrders, which simply returns the orders for a specific token on a specific side
-    function getOrders(
+    function getOrders( // hypothetically done
       bytes32 ticker, 
       Side side) 
       external 
@@ -65,7 +65,7 @@ contract Exc is IExc{
     }
 
     // todo: implement getTokens, which simply returns an array of the tokens currently traded on in the exchange
-    function getTokens() 
+    function getTokens() // hypothetically done
       external 
       view 
       returns(Token[] memory) {
@@ -73,17 +73,19 @@ contract Exc is IExc{
           
           for (uint i = 0; i < tokenList.length; i++) {
               Token memory token = tokens[tokenList[i]];
-              returnTokens.push(token);
+              returnTokens[returnTokens.length] = token;
           }
           
           return returnTokens;
     }
     
     // todo: implement addToken, which should add the token desired to the exchange by interacting with tokenList and tokens
-    function addToken(
+    function addToken( // hypothetically done
         bytes32 ticker,
         address tokenAddress)
         external {
+            tokenList.push(ticker);
+            tokens[ticker] = Token(ticker, tokenAddress);
     }
     
     // todo: implement deposit, which should deposit a certain amount of tokens from a trader to their on-exchange wallet,
