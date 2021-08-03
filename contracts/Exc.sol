@@ -11,6 +11,7 @@ import '../contracts/libraries/math/SafeMath.sol';
 import "./IExc.sol";
 
 contract Exc is IExc{
+    
     /// @notice simply notes that we are using SafeMath for uint, since Solidity's math is unsafe. For all the math
     /// you do, you must use the methods specified in SafeMath (found at the github link above), instead of Solidity's
     /// built-in operators.
@@ -18,7 +19,7 @@ contract Exc is IExc{
     
     /// @notice these declarations are incomplete. You will still need a way to store the orderbook, the balances
     /// of the traders, and the IDs of the next trades and orders. Reference the NewTrade event and the IExc
-    /// interface for more details about orders and sides.
+    /// interface for more details about orders and sides. 
     mapping(bytes32 => Token) public tokens;
     bytes32[] public tokenList;
     bytes32 constant PIN = bytes32('PIN');
@@ -27,6 +28,10 @@ contract Exc is IExc{
     /// different, implementing a function that just takes in the address of the trader and then the ticker of a
     /// token instead would suffice
     mapping(address => mapping(bytes32 => uint)) public traderBalances;
+    
+    // Create the order book
+    uint[] public orderBookIds;
+    mapping(uint => Order) public orderBook;
     
     /// @notice an event representing all the needed info regarding a new trade on the exchange
     event NewTrade(
@@ -47,6 +52,16 @@ contract Exc is IExc{
       external 
       view
       returns(Order[] memory) {
+          Order[] memory returnList;
+          
+          for (uint i = 0; i < orderBookIds.length; i++) {
+              Order memory order = orderBook[orderBookIds[i]];
+              if (order.ticker == ticker && order.side == side) {
+                  returnList[returnList.length] = order;
+              }
+          }
+          
+          return returnList;
     }
 
     // todo: implement getTokens, which simply returns an array of the tokens currently traded on in the exchange
@@ -54,6 +69,14 @@ contract Exc is IExc{
       external 
       view 
       returns(Token[] memory) {
+          Token[] memory returnTokens;
+          
+          for (uint i = 0; i < tokenList.length; i++) {
+              Token memory token = tokens[tokenList[i]];
+              returnTokens.push(token);
+          }
+          
+          return returnTokens;
     }
     
     // todo: implement addToken, which should add the token desired to the exchange by interacting with tokenList and tokens

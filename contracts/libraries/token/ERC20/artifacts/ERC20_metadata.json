@@ -226,31 +226,31 @@
 			}
 		],
 		"devdoc": {
-			"details": "Implementation of the {IERC20} interface. * This implementation is agnostic to the way tokens are created. This means that a supply mechanism has to be added in a derived contract using {_mint}. For a generic mechanism see {ERC20Mintable}. * TIP: For a detailed writeup see our guide https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How to implement supply mechanisms]. * We have followed general OpenZeppelin guidelines: functions revert instead of returning `false` on failure. This behavior is nonetheless conventional and does not conflict with the expectations of ERC20 applications. * Additionally, an {Approval} event is emitted on calls to {transferFrom}. This allows applications to reconstruct the allowance for all accounts just by listening to said events. Other implementations of the EIP may not emit these events, as it isn't required by the specification. * Finally, the non-standard {decreaseAllowance} and {increaseAllowance} functions have been added to mitigate the well-known issues around setting allowances. See {IERC20-approve}.",
+			"details": "Implementation of the {IERC20} interface.\r  * This implementation is agnostic to the way tokens are created. This means\r that a supply mechanism has to be added in a derived contract using {_mint}.\r For a generic mechanism see {ERC20Mintable}.\r  * TIP: For a detailed writeup see our guide\r https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How\r to implement supply mechanisms].\r  * We have followed general OpenZeppelin guidelines: functions revert instead\r of returning `false` on failure. This behavior is nonetheless conventional\r and does not conflict with the expectations of ERC20 applications.\r  * Additionally, an {Approval} event is emitted on calls to {transferFrom}.\r This allows applications to reconstruct the allowance for all accounts just\r by listening to said events. Other implementations of the EIP may not emit\r these events, as it isn't required by the specification.\r  * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}\r functions have been added to mitigate the well-known issues around setting\r allowances. See {IERC20-approve}.\r",
 			"methods": {
 				"allowance(address,address)": {
-					"details": "See {IERC20-allowance}."
+					"details": "See {IERC20-allowance}.\r"
 				},
 				"approve(address,uint256)": {
-					"details": "See {IERC20-approve}.     * Requirements:     * - `spender` cannot be the zero address."
+					"details": "See {IERC20-approve}.\r      * Requirements:\r      * - `spender` cannot be the zero address.\r"
 				},
 				"balanceOf(address)": {
-					"details": "See {IERC20-balanceOf}."
+					"details": "See {IERC20-balanceOf}.\r"
 				},
 				"decreaseAllowance(address,uint256)": {
-					"details": "Atomically decreases the allowance granted to `spender` by the caller.     * This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}.     * Emits an {Approval} event indicating the updated allowance.     * Requirements:     * - `spender` cannot be the zero address. - `spender` must have allowance for the caller of at least `subtractedValue`."
+					"details": "Atomically decreases the allowance granted to `spender` by the caller.\r      * This is an alternative to {approve} that can be used as a mitigation for\r problems described in {IERC20-approve}.\r      * Emits an {Approval} event indicating the updated allowance.\r      * Requirements:\r      * - `spender` cannot be the zero address.\r - `spender` must have allowance for the caller of at least\r `subtractedValue`.\r"
 				},
 				"increaseAllowance(address,uint256)": {
-					"details": "Atomically increases the allowance granted to `spender` by the caller.     * This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}.     * Emits an {Approval} event indicating the updated allowance.     * Requirements:     * - `spender` cannot be the zero address."
+					"details": "Atomically increases the allowance granted to `spender` by the caller.\r      * This is an alternative to {approve} that can be used as a mitigation for\r problems described in {IERC20-approve}.\r      * Emits an {Approval} event indicating the updated allowance.\r      * Requirements:\r      * - `spender` cannot be the zero address.\r"
 				},
 				"totalSupply()": {
-					"details": "See {IERC20-totalSupply}."
+					"details": "See {IERC20-totalSupply}.\r"
 				},
 				"transfer(address,uint256)": {
-					"details": "See {IERC20-transfer}.     * Requirements:     * - `recipient` cannot be the zero address. - the caller must have a balance of at least `amount`."
+					"details": "See {IERC20-transfer}.\r      * Requirements:\r      * - `recipient` cannot be the zero address.\r - the caller must have a balance of at least `amount`.\r"
 				},
 				"transferFrom(address,address,uint256)": {
-					"details": "See {IERC20-transferFrom}.     * Emits an {Approval} event indicating the updated allowance. This is not required by the EIP. See the note at the beginning of {ERC20};     * Requirements: - `sender` and `recipient` cannot be the zero address. - `sender` must have a balance of at least `amount`. - the caller must have allowance for `sender`'s tokens of at least `amount`."
+					"details": "See {IERC20-transferFrom}.\r      * Emits an {Approval} event indicating the updated allowance. This is not\r required by the EIP. See the note at the beginning of {ERC20};\r      * Requirements:\r - `sender` and `recipient` cannot be the zero address.\r - `sender` must have a balance of at least `amount`.\r - the caller must have allowance for `sender`'s tokens of at least\r `amount`.\r"
 				}
 			}
 		},
@@ -262,7 +262,7 @@
 		"compilationTarget": {
 			"contracts/libraries/token/ERC20/ERC20.sol": "ERC20"
 		},
-		"evmVersion": "constantinople",
+		"evmVersion": "byzantium",
 		"libraries": {},
 		"optimizer": {
 			"enabled": false,
@@ -272,27 +272,27 @@
 	},
 	"sources": {
 		"contracts/libraries/GSN/Context.sol": {
-			"keccak256": "0x90a3995645af7562d84b9d69363ffa5ae7217714ab61e951bf7bc450f40e4061",
+			"keccak256": "0x98d9c3f119eabc9384b14d85702d9a1249760fc32ae8cb295f1071a064c6733a",
 			"urls": [
-				"bzzr://51482c01bddf23793bddee43b60ab9578a62948a4f2082def24ea792a553b055"
+				"bzzr://beced7f16902f6de97148603c79e526e72d5244a56fb76d500ee3b857ff9bb47"
 			]
 		},
 		"contracts/libraries/math/SafeMath.sol": {
-			"keccak256": "0x640b6dee7a4b830bdfd52b5031a07fc2b12209f5b2e29e5d364a7d37f69d8076",
+			"keccak256": "0xeb295b448107f6adee6c0861eba7cd58983eeb1a2bf9cd24b3df9c75fe17db75",
 			"urls": [
-				"bzzr://292843005e754e752644f767477ec5ad7a1ffc91ddb18c38b8079c62f3993cad"
+				"bzzr://cdb2eefb0ce6e610ee1b981cdaed5906eaeff5363d4cc6f3df854c93148c3916"
 			]
 		},
 		"contracts/libraries/token/ERC20/ERC20.sol": {
-			"keccak256": "0xb15af804e2bc97db51e4e103f13de9fe13f87e6b835d7a88c897966c0e58506e",
+			"keccak256": "0x5394db3bea189ac8c117f957e21f2b4369e7987ba8520613a5c62e56ba751d58",
 			"urls": [
-				"bzzr://6200c125af376381ae6c5415b8f3c1cb83889be20a7a51d67ac607487a10313b"
+				"bzzr://0d796e6f2827d5f4250e338ce5fdf732941f542fd8ea4fac2a880590eb260796"
 			]
 		},
 		"contracts/libraries/token/ERC20/IERC20.sol": {
-			"keccak256": "0xe5bb0f57cff3e299f360052ba50f1ea0fff046df2be070b6943e0e3c3fdad8a9",
+			"keccak256": "0xd45135fede71fe4b2f06ccc22c459f880912785065a13f5ebf85ebe3d07d632e",
 			"urls": [
-				"bzzr://cf2d583b8dce38d0617fdcd65f2fd9f126fe17b7f683b5a515ea9d2762d8b062"
+				"bzzr://f039f90386b495b4615922fc5eb29b8659ab0eff8fc1895624b4e5b77ceee009"
 			]
 		}
 	},
