@@ -41,11 +41,15 @@ contract Pool {
 
     // todo: implement withdraw and deposit functions so that a single deposit and a single withdraw can unstake
     // both tokens at the same time
-    function deposit(uint tokenAmount, uint pineAmount){
+    function deposit(uint tokenAmount, uint pineAmount) external {
+        IERC20(tokenP).approve(dex, pineAmount); // approve pine to deposit into dex
+        Exc(dex).deposit(pineAmount, tokenPT); // deposit pine into dex
 
+        IERC20(token1).approve(dex, tokenAmount); // approve token1 to deposit into dex
+        Exc(dex).deposit(tokenAmount, token1T); // deposit token1 into dex
     }
 
-    function withdraw(uint tokenAmount, uint pineAmount){
+    function withdraw(uint tokenAmount, uint pineAmount) external {
 
     }
 
