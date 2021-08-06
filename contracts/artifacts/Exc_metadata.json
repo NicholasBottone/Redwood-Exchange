@@ -405,7 +405,7 @@
 		"compilationTarget": {
 			"contracts/Exc.sol": "Exc"
 		},
-		"evmVersion": "constantinople",
+		"evmVersion": "byzantium",
 		"libraries": {},
 		"optimizer": {
 			"enabled": false,

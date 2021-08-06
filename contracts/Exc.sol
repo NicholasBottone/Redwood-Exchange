@@ -23,7 +23,7 @@ contract Exc is IExc{
     /// interface for more details about orders and sides. 
     mapping(bytes32 => Token) public tokens;
     bytes32[] public tokenList;
-    bytes32 constant PIN = bytes32('PIN');
+    bytes32 constant PIN = bytes32('PIN'); // pine
 
     /// @notice, this is the more standardized form of the main wallet data structure, if you're using something a bit
     /// different, implementing a function that just takes in the address of the trader and then the ticker of a
@@ -113,7 +113,7 @@ contract Exc is IExc{
     // todo: implement makeLimitOrder, which creates a limit order based on the parameters provided. This method should only be
     // used when the token desired exists and is not pine. This method should not execute if the trader's token or pine balances
     // are too low, depending on side. This order should be saved in the orderBook
-    
+    //
     // todo: implement a sorting algorithm for limit orders, based on best prices for market orders having the highest priority.
     // i.e., a limit buy order with a high price should have a higher priority in the orderbook.
     function makeLimitOrder(
@@ -122,14 +122,27 @@ contract Exc is IExc{
         uint price,
         Side side)
         external {
+            traderBalances[msg.sender][ticker].sub(amount); // check if the trader has enough tokens to make the order
+            // fixme: does side need to be checked?
+
+            uint orderId = orderBookIds.length;
+            Order memory order = Order(orderId, msg.sender, side, ticker, amount, 0, price, now);
+            orderBookIds.push(orderId);
+            orderBook[orderId] = order;
     }
     
     // todo: implement deleteLimitOrder, which will delete a limit order from the orderBook as long as the same trader is deleting
     // it.
-        function deleteLimitOrder(
+    function deleteLimitOrder(
         uint id,
         bytes32 ticker,
         Side side) external returns (bool) {
+            if (orderBook[id].trader == msg.sender && orderBook[id].side == side && orderBook[id].ticker == ticker) {
+                delete orderBookIds[id];
+                delete orderBook[id];
+                return true;
+            }
+            return false;
     }
     
     // todo: implement makeMarketOrder, which will execute a market order on the current orderbook. The market order need not be
