@@ -9,6 +9,7 @@ import "./IExc.sol";
 contract Exc is IExc{
     
     using SafeMath for uint;
+    using SafeMath for uint256;
 
     /// @notice these declarations are incomplete. You will still need a way to store the orderbook, the balances
     /// of the traders, and the IDs of the next trades and orders. Reference the NewTrade event and the IExc
