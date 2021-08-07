@@ -90,8 +90,8 @@ contract Exc is IExc{
         bytes32 ticker)
         tokenExists(ticker)
         external {
-            traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(amount);
             IERC20(tokens[ticker].tokenAddress).transferFrom(msg.sender, address(this), amount);
+            traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(amount);
     }
     
     // todo: implement withdraw, which should do the opposite of deposit. The trader should not be able to withdraw more than
@@ -119,14 +119,16 @@ contract Exc is IExc{
         tokenExists(ticker)
         notPine(ticker)
         external {
+            // charge the trader for the order
             if (side == Side.BUY) {
-                traderBalances[msg.sender][PIN].sub(price); // check if the trader has enough pine to make the buy order
+                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].sub(price); 
             } else {
-                traderBalances[msg.sender][ticker].sub(amount); // check if the trader has enough tokens to make the sell order
+                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(amount);
             }
 
+            // create the order
             uint orderId = orderBookIds.length;
-            Order memory order = Order(orderId, msg.sender, side, ticker, amount, 0, price, now); // create the order
+            Order memory order = Order(orderId, msg.sender, side, ticker, amount, 0, price, now);
             orderBookIds.push(orderId);
             orderBook[orderId] = order;
 
@@ -143,6 +145,13 @@ contract Exc is IExc{
         external returns (bool) {
             // check if the trader is deleting the order they created and other info is correct
             if (orderBook[id].trader == msg.sender && orderBook[id].side == side && orderBook[id].ticker == ticker) {
+                // Give a refund to the trader for the order
+                if (side == Side.BUY) {
+                    traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].add(orderBook[id].price);
+                } else {
+                    traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(orderBook[id].amount);
+                }
+                
                 orderBookIds[id] = orderBookIds[orderBookIds.length - 1]; // move the last order to the deleted order's position
                 orderBookIds.pop(); // delete the last order (pop goes the weasel)
                 delete orderBook[id];
@@ -204,7 +213,7 @@ contract Exc is IExc{
     }
 
     function getBestOrder(bytes32 ticker, Side side) internal view returns (Order memory) {
-        for (uint i = 0; i < orderBookIds.length; i++) {
+        for (uint i = 0; i < orderBookIds.length; i++) { // for each order in the orderbook
             Order memory order = orderBook[orderBookIds[i]];
             if (order.side == side && order.ticker == ticker) {
                 return order;
