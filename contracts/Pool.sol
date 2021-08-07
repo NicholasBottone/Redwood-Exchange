@@ -13,12 +13,13 @@ contract Pool {
     /// @notice some parameters for the pool to function correctly, feel free to add more as needed
     address private tokenP; // pine address
     address private token1; // other token address
-    address private dex; // exchange address
+    address private dex; // exchange address (Exc address)
     bytes32 private tokenPT; // pine ticker
     bytes32 private token1T; // other token ticker
     
-    // Pool Wallet --> Trader balances by token that are in the pool
-    mapping(address => mapping(bytes32 => uint)) public poolBalances;
+    // Pool balances (for tracking the ratio between pine and token)
+    uint public poolPine;
+    uint public poolToken;
 
     // todo: fill in the initialize method, which should simply set the parameters of the contract correctly. To be called once
     // upon deployment by the factory.
@@ -46,21 +47,41 @@ contract Pool {
     // todo: implement withdraw and deposit functions so that a single deposit and a single withdraw can unstake
     // both tokens at the same time
     function deposit(uint tokenAmount, uint pineAmount) external {
-        // deposit Pine from msg.sender to the pool
-        IERC20(tokenP).transferFrom(msg.sender, dex, pineAmount);
-        poolBalances[msg.sender][tokenPT] = poolBalances[msg.sender][tokenPT].add(pineAmount);
-        // deposit token1 from msg.sender to the pool
-        IERC20(token1).transferFrom(msg.sender, dex, tokenAmount);
-        poolBalances[msg.sender][token1T] = poolBalances[msg.sender][token1T].add(tokenAmount);
+        // Approve the Dex to deposit the amount of Pine and token
+        IERC20(tokenP).approve(dex, pineAmount);
+        IERC20(token1).approve(dex, tokenAmount);
+
+        // Add to the pool
+        poolPine = poolPine.add(pineAmount);
+        poolToken = poolToken.add(tokenAmount);
+
+        // Deposit Pine and token to the exchange
+        IExc(dex).deposit(pineAmount, tokenPT);
+        IExc(dex).deposit(tokenAmount, token1T);
+
+        // Make a buy limit order and sell limit order with the calculated market price
+        uint tradeRatio = getTradeRatio();
+        IExc(dex).makeLimitOrder(token1T, tokenAmount, tradeRatio, IExc.Side.SELL);
+        IExc(dex).makeLimitOrder(token1T, pineAmount.div(tradeRatio), tradeRatio, IExc.Side.BUY);
     }
 
     function withdraw(uint tokenAmount, uint pineAmount) external {
-        // withdraw Pine from the pool to msg.sender
-        poolBalances[msg.sender][tokenPT] = poolBalances[msg.sender][tokenPT].sub(pineAmount);
-        IERC20(tokenP).transferFrom(dex, msg.sender, pineAmount);
-        // withdraw token1 from the pool to msg.sender
-        poolBalances[msg.sender][token1T] = poolBalances[msg.sender][token1T].sub(tokenAmount);
-        IERC20(token1).transferFrom(dex, msg.sender, tokenAmount);
+        // Approve the Dex to withdraw the amount of Pine and token
+        IERC20(tokenP).approve(dex, pineAmount);
+        IERC20(token1).approve(dex, tokenAmount);
+
+        // Withdraw Pine and token from the exchange
+        IExc(dex).withdraw(pineAmount, tokenPT);
+        IExc(dex).withdraw(tokenAmount, token1T);
+    }
+
+    function getTradeRatio() view internal returns (uint) {
+        if (poolToken == 0 || poolPine == 0) {
+            // if either token or pine is 0, return 0
+            return 0;
+        }
+
+        return poolToken.div(poolPine); // token to pine ratio
     }
 
     function testing(uint testMe) public pure returns (uint) {

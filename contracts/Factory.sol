@@ -14,7 +14,8 @@ contract Factory {
     function createPair(
       address tokenA,
       address tokenB,
-      address quoting, address dex,
+      address quoting, 
+      address dex,
       bytes32 tickerQ,
       bytes32 tickerT) external returns (address pair) {
           // Require conditions
