@@ -118,11 +118,14 @@ contract Exc is IExc{
         tokenExists(ticker)
         notPine(ticker)
         external {
-            traderBalances[msg.sender][ticker].sub(amount); // check if the trader has enough tokens to make the order
-            // fixme: does side need to be checked?
+            if (side == Side.BUY) {
+                traderBalances[msg.sender][PIN].sub(price); // check if the trader has enough pine to make the buy order
+            } else {
+                traderBalances[msg.sender][ticker].sub(amount); // check if the trader has enough tokens to make the sell order
+            }
 
             uint orderId = orderBookIds.length;
-            Order memory order = Order(orderId, msg.sender, side, ticker, amount, 0, price, now);
+            Order memory order = Order(orderId, msg.sender, side, ticker, amount, 0, price, now); // create the order
             orderBookIds.push(orderId);
             orderBook[orderId] = order;
 
