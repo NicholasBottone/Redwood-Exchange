@@ -68,6 +68,12 @@ contract Exc is IExc {
         uint256 date
     );
 
+    /// @notice an event representing all the needed info regarding a deposit on the exchange
+    event Deposit(address indexed trader, uint256 amount, uint256 date);
+
+    /// @notice an event representing all the needed info regarding a withdrawal on the exchange
+    event Withdrawal(address indexed trader, uint256 amount, uint256 date);
+
     // Gets the last order ID
     function getLastOrderID() external view returns (uint256) {
         return lastOrderId;
@@ -119,6 +125,7 @@ contract Exc is IExc {
     function deposit(uint256 amount, bytes32 ticker) external tokenExists(ticker) {
         IERC20(tokens[ticker].tokenAddress).transferFrom(msg.sender, address(this), amount);
         traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(amount);
+        emit Deposit(msg.sender, amount, now);
     }
 
     // todo: implement withdraw, which should do the opposite of deposit. The trader should not be able to withdraw more than
@@ -126,6 +133,7 @@ contract Exc is IExc {
     function withdraw(uint256 amount, bytes32 ticker) external tokenExists(ticker) {
         traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(amount);
         IERC20(tokens[ticker].tokenAddress).transfer(msg.sender, amount);
+        emit Withdrawal(msg.sender, amount, now);
     }
 
     // todo: implement makeLimitOrder, which creates a limit order based on the parameters provided. This method should only be
