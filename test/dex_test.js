@@ -11,9 +11,7 @@ const SIDE = {
 contract("Exc", (accounts) => {
     let pin, zrx, exc;
     const [trader1, trader2] = [accounts[1], accounts[2]];
-    const [PIN, ZRX] = ["PIN", "ZRX"].map((ticker) =>
-        web3.utils.fromAscii(ticker)
-    );
+    const [PIN, ZRX] = ["PIN", "ZRX"].map((ticker) => web3.utils.fromAscii(ticker));
 
     beforeEach(async () => {
         [pin, zrx] = await Promise.all([Pin.new(), Zrx.new()]);
@@ -53,8 +51,8 @@ contract("Exc", (accounts) => {
         await pin.mint(trader1, balance);
         await pin.approve(exc.address, balance, { from: trader1 });
         await exc.deposit(1000, PIN, { from: trader1 });
-        const trader1Balanece = await exc.traderBalaneces.call(trader1, PIN);
-        assert.equal(parseInt(trader1Balanece), balance);
+        const trader1Balance = await exc.traderBalances.call(trader1, PIN);
+        assert.equal(parseInt(trader1Balance), balance);
     });
 
     it("withdraw", async () => {
@@ -64,7 +62,7 @@ contract("Exc", (accounts) => {
         await pin.approve(exc.address, balance, { from: trader1 });
         await pin.deposit(500, PIN, { from: trader1 });
         await pin.withdraw(500, PIN, { from: trader1 });
-        const trader1Balance = await exc.traderBalanece.call(trader1, PIN);
+        const trader1Balance = await exc.traderBalances.call(trader1, PIN);
         assert.equal(parseInt(trader1Balance), 0);
     });
 
@@ -76,7 +74,7 @@ contract("Exc", (accounts) => {
         await pin.approve(exc.address, balance, { from: trader2 });
         await exc.deposit(balance, PIN, { from: trader1 });
         await exc.makeLimitOrder(ZRX, 10, 5, 0, { from: trader2 });
-        const order = await exc.getOrders(ZRX, 0);
+        // const order = await exc.getOrders(ZRX, 0);
         const amount = 10;
         const price = 5;
         await exc.makeLimitOrder(ZRX, amount, price, 0, { from: trader2 });
@@ -94,12 +92,11 @@ contract("Exc", (accounts) => {
         await pin.approve(exc.address, balance, { from: trader1 });
         await exc.deposit(balance, PIN, { from: trader1 });
         await exc.makeLimitOrder(ZRX, 10, 5, 0, { from: trader1 });
-        const order = await exc.getOrders(ZRX, 0);
         const amount = 10;
         const price = 5;
         await exc.makeLimitOrder(ZRX, amount, price, 0, { from: trader1 });
         await exc.deleteLimitOrder(0, ZRX, 0, { from: trader1 });
-        const order = await exc.getOrders(ZRX, 0);
+        const orders = await exc.getOrders(ZRX, 0);
         assert.equal(orders.length, 0);
     });
 
