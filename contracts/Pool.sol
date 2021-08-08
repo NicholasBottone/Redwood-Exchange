@@ -24,6 +24,9 @@ contract Pool {
     uint256 public sellOrderID;
     bool public ordersExist;
 
+    // Wallet --> Trader balances by token
+    mapping(address => mapping(bytes32 => uint256)) public traderBalances;
+
     // todo: fill in the initialize method, which should simply set the parameters of the contract correctly. To be called once
     // upon deployment by the factory.
     function initialize(
@@ -54,13 +57,25 @@ contract Pool {
     // todo: implement withdraw and deposit functions so that a single deposit and a single withdraw can unstake
     // both tokens at the same time
     function deposit(uint256 tokenAmount, uint256 pineAmount) external {
-        // Approve the Dex to deposit the amount of Pine and token
-        IERC20(tokenP).approve(dex, pineAmount);
-        IERC20(token1).approve(dex, tokenAmount);
+        // Transfer the deposited amount to this contract
+        IERC20(tokenP).transferFrom(msg.sender, address(this), pineAmount);
+        IERC20(token1).transferFrom(msg.sender, address(this), tokenAmount);
+
+        // Update the balances of the wallet
+        traderBalances[msg.sender][tokenPT] = traderBalances[msg.sender][
+            tokenPT
+        ].add(pineAmount);
+        traderBalances[msg.sender][token1T] = traderBalances[msg.sender][
+            token1T
+        ].add(tokenAmount);
 
         // Add to the pool
         poolPine = poolPine.add(pineAmount);
         poolToken = poolToken.add(tokenAmount);
+
+        // Approve the Dex to deposit the amount of Pine and token
+        IERC20(tokenP).approve(dex, pineAmount);
+        IERC20(token1).approve(dex, tokenAmount);
 
         // Deposit Pine and token to the exchange
         IExc(dex).deposit(pineAmount, tokenPT);
@@ -92,17 +107,21 @@ contract Pool {
     }
 
     function withdraw(uint256 tokenAmount, uint256 pineAmount) external {
+        // Update the balances of the wallet
+        traderBalances[msg.sender][tokenPT] = traderBalances[msg.sender][
+            tokenPT
+        ].sub(pineAmount);
+        traderBalances[msg.sender][token1T] = traderBalances[msg.sender][
+            token1T
+        ].sub(tokenAmount);
+
         // Remove/cancel the old limit orders
         if (ordersExist) {
             IExc(dex).deleteLimitOrder(buyOrderID, token1T, IExc.Side.BUY);
             IExc(dex).deleteLimitOrder(sellOrderID, token1T, IExc.Side.SELL);
         }
 
-        // Approve the Dex to withdraw the amount of Pine and token
-        IERC20(tokenP).approve(dex, pineAmount);
-        IERC20(token1).approve(dex, tokenAmount);
-
-        // Withdraw Pine and token from the exchange
+        // Withdraw Pine and token from the exchange to this contract
         IExc(dex).withdraw(pineAmount, tokenPT);
         IExc(dex).withdraw(tokenAmount, token1T);
 
@@ -110,24 +129,26 @@ contract Pool {
         poolPine = poolPine.sub(pineAmount);
         poolToken = poolToken.sub(tokenAmount);
 
-        if (ordersExist) {
-            // Make a buy limit order and sell limit order with the calculated market price
-            uint256 tradeRatio = getTradeRatio();
-            IExc(dex).makeLimitOrder(
-                token1T,
-                tokenAmount,
-                tradeRatio,
-                IExc.Side.SELL
-            );
-            sellOrderID = IExc(dex).getLastOrderID();
-            IExc(dex).makeLimitOrder(
-                token1T,
-                pineAmount.div(tradeRatio),
-                tradeRatio,
-                IExc.Side.BUY
-            );
-            buyOrderID = IExc(dex).getLastOrderID();
-        }
+        // Transfer the withdrawn amount to the trader
+        IERC20(tokenP).transfer(msg.sender, pineAmount);
+        IERC20(token1).transfer(msg.sender, tokenAmount);
+
+        // Make a buy limit order and sell limit order with the calculated market price
+        uint256 tradeRatio = getTradeRatio();
+        IExc(dex).makeLimitOrder(
+            token1T,
+            tokenAmount,
+            tradeRatio,
+            IExc.Side.SELL
+        );
+        sellOrderID = IExc(dex).getLastOrderID();
+        IExc(dex).makeLimitOrder(
+            token1T,
+            pineAmount.div(tradeRatio),
+            tradeRatio,
+            IExc.Side.BUY
+        );
+        buyOrderID = IExc(dex).getLastOrderID();
     }
 
     function getTradeRatio() internal view returns (uint256) {
