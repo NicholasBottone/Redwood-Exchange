@@ -118,12 +118,6 @@ contract Pool {
             }
         }
 
-        // Delete old limit orders
-        if (ordersExist) {
-            IExc(dex).deleteLimitOrder(buyOrderID, token1T, IExc.Side.BUY);
-            IExc(dex).deleteLimitOrder(sellOrderID, token1T, IExc.Side.SELL);
-        }
-
         // Make a buy limit order and sell limit order with the calculated market price
         uint256 tradeRatio = getTradeRatio();
         if (tokenAmount > 0) {
@@ -153,33 +147,6 @@ contract Pool {
         require(tokenAmount <= traderBalances[msg.sender][token1T]);
         require(pineAmount <= traderBalances[msg.sender][tokenPT]);
 
-<<<<<<< HEAD
-        // Withdraw Pine and token from the exchange
-        IExc(dex).withdraw(pineAmount, tokenPT);
-        IExc(dex).withdraw(tokenAmount, token1T);
-
-        // Subtract from the pool
-        poolPine = poolPine.sub(pineAmount);
-        poolToken = poolToken.sub(tokenAmount);
-
-        if (ordersExist) {
-            // Make a buy limit order and sell limit order with the calculated market price
-            uint256 tradeRatio = getTradeRatio();
-            IExc(dex).makeLimitOrder(
-                token1T,
-                tokenAmount,
-                tradeRatio,
-                IExc.Side.SELL
-            );
-            sellOrderID = IExc(dex).getLastOrderId();
-            IExc(dex).makeLimitOrder(
-                token1T,
-                pineAmount.div(tradeRatio),
-                tradeRatio,
-                IExc.Side.BUY
-            );
-            buyOrderID = IExc(dex).getLastOrderId();
-=======
         if (tokenAmount > 0) {
             require(sellOrderExists);
         }
@@ -244,17 +211,11 @@ contract Pool {
                 IExc.Side.BUY
             );
             buyOrderID = IExc(dex).getLastOrderID();
->>>>>>> be4804be3581734875827a6aae6e394e3e786a56
         }
     }
 
     function getTradeRatio() internal view returns (uint256) {
-        if (poolToken == 0 || poolPine == 0) {
-            // if either token or pine is 0, return 0
-            return 0;
-        }
-
-        return poolPine.div(poolToken); // pine to token ratio
+        return poolPine.div(poolToken > 0 ? poolToken : 1); // pine to token ratio
     }
 
     function testing(uint256 testMe) public pure returns (uint256) {

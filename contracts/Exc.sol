@@ -194,7 +194,7 @@ contract Exc is IExc {
         uint256 amountLeft = amount;
 
         if (side == Side.BUY) {
-            // if the trader is buying tokens, then they are buying from the market
+            // if the trader is buying tokens from the exchange
 
             while (amountLeft > 0) {
                 // buy tokens from the market until the market order is satisified
@@ -216,7 +216,7 @@ contract Exc is IExc {
                 checkIfOrderFilled(order); // check if the order is completely filled, delete it if it is
             }
         } else {
-            // if the trader is selling tokens, then they are selling to the market
+            // if the trader is selling tokens to the exchange
 
             while (amountLeft > 0) {
                 // sell tokens to the market until the market order is satisfied
