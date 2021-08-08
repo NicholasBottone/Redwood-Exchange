@@ -1,7 +1,6 @@
 pragma solidity 0.5.3;
 
 import "./Exc.sol";
-// import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/solc-0.6/contracts/math/SafeMath.sol";
 import "../contracts/libraries/math/SafeMath.sol";
 
 contract Pool {

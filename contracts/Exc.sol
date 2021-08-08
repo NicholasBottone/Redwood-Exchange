@@ -44,11 +44,12 @@ contract Exc is IExc {
     }
 
     // todo: implement getOrders, which simply returns the orders for a specific token on a specific side
-    function getOrders(
-        // hypothetically done
-        bytes32 ticker,
-        Side side
-    ) external view tokenExists(ticker) returns (Order[] memory) {
+    function getOrders(bytes32 ticker, Side side)
+        external
+        view
+        tokenExists(ticker)
+        returns (Order[] memory)
+    {
         Order[] memory returnList;
 
         for (uint256 i = 0; i < orderBookIds.length; i++) {
@@ -62,14 +63,7 @@ contract Exc is IExc {
     }
 
     // todo: implement getTokens, which simply returns an array of the tokens currently traded on in the exchange
-    function getTokens()
-        external
-        view
-        returns (
-            /// hypothetically done
-            Token[] memory
-        )
-    {
+    function getTokens() external view returns (Token[] memory) {
         Token[] memory returnTokens;
 
         for (uint256 i = 0; i < tokenList.length; i++) {
@@ -81,11 +75,10 @@ contract Exc is IExc {
     }
 
     // todo: implement addToken, which should add the token desired to the exchange by interacting with tokenList and tokens
-    function addToken(
-        // hypothetically done
-        bytes32 ticker,
-        address tokenAddress
-    ) external tokenExists(ticker) {
+    function addToken(bytes32 ticker, address tokenAddress)
+        external
+        tokenExists(ticker)
+    {
         tokenList.push(ticker);
         tokens[ticker] = Token(ticker, tokenAddress);
     }
@@ -93,11 +86,10 @@ contract Exc is IExc {
     // todo: implement deposit, which should deposit a certain amount of tokens from a trader to their on-exchange wallet,
     // based on the wallet data structure you create and the IERC20 interface methods. Namely, you should transfer
     // tokens from the account of the trader on that token to this smart contract, and credit them appropriately
-    function deposit(
-        // hypothetically done
-        uint256 amount,
-        bytes32 ticker
-    ) external tokenExists(ticker) {
+    function deposit(uint256 amount, bytes32 ticker)
+        external
+        tokenExists(ticker)
+    {
         IERC20(tokens[ticker].tokenAddress).transferFrom(
             msg.sender,
             address(this),
@@ -109,11 +101,10 @@ contract Exc is IExc {
 
     // todo: implement withdraw, which should do the opposite of deposit. The trader should not be able to withdraw more than
     // they have in the exchange.
-    function withdraw(
-        // hypothetically done
-        uint256 amount,
-        bytes32 ticker
-    ) external tokenExists(ticker) {
+    function withdraw(uint256 amount, bytes32 ticker)
+        external
+        tokenExists(ticker)
+    {
         traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker]
             .sub(amount);
         IERC20(tokens[ticker].tokenAddress).transferFrom(
