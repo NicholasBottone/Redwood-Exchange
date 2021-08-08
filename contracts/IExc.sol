@@ -25,10 +25,7 @@ interface IExc {
 
     function getLastOrderID() external view returns (uint256);
 
-    function getOrders(bytes32 ticker, Side side)
-        external
-        view
-        returns (Order[] memory);
+    function getOrders(bytes32 ticker, Side side) external view returns (Order[] memory);
 
     function getTokens() external view returns (Token[] memory);
 

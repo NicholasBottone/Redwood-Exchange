@@ -74,9 +74,9 @@ contract Pool {
             IExc(dex).deposit(pineAmount, tokenPT);
 
             // Update the balances of the wallet
-            traderBalances[msg.sender][tokenPT] = traderBalances[msg.sender][
-                tokenPT
-            ].add(pineAmount);
+            traderBalances[msg.sender][tokenPT] = traderBalances[msg.sender][tokenPT].add(
+                pineAmount
+            );
 
             // Add to the pool
             poolPine = poolPine.add(pineAmount);
@@ -88,9 +88,9 @@ contract Pool {
             IERC20(token1).transferFrom(msg.sender, address(this), tokenAmount);
 
             // Update the balances of the wallet
-            traderBalances[msg.sender][token1T] = traderBalances[msg.sender][
-                token1T
-            ].add(tokenAmount);
+            traderBalances[msg.sender][token1T] = traderBalances[msg.sender][token1T].add(
+                tokenAmount
+            );
 
             // Add to the pool
             poolToken = poolToken.add(tokenAmount);
@@ -110,33 +110,19 @@ contract Pool {
         }
         if (sellOrderExists) {
             if (tokenAmount > 0) {
-                IExc(dex).deleteLimitOrder(
-                    sellOrderID,
-                    token1T,
-                    IExc.Side.SELL
-                );
+                IExc(dex).deleteLimitOrder(sellOrderID, token1T, IExc.Side.SELL);
             }
         }
 
         // Make a buy limit order and sell limit order with the calculated market price
         uint256 tradeRatio = getTradeRatio();
         if (tokenAmount > 0) {
-            IExc(dex).makeLimitOrder(
-                token1T,
-                poolToken,
-                tradeRatio,
-                IExc.Side.SELL
-            );
+            IExc(dex).makeLimitOrder(token1T, poolToken, tradeRatio, IExc.Side.SELL);
             sellOrderID = IExc(dex).getLastOrderID();
             sellOrderExists = true;
         }
         if (pineAmount > 0) {
-            IExc(dex).makeLimitOrder(
-                token1T,
-                poolToken,
-                tradeRatio,
-                IExc.Side.BUY
-            );
+            IExc(dex).makeLimitOrder(token1T, poolToken, tradeRatio, IExc.Side.BUY);
             buyOrderID = IExc(dex).getLastOrderID();
             buyOrderExists = true;
         }
@@ -155,12 +141,8 @@ contract Pool {
         }
 
         // Update the balances of the wallet
-        traderBalances[msg.sender][tokenPT] = traderBalances[msg.sender][
-            tokenPT
-        ].sub(pineAmount);
-        traderBalances[msg.sender][token1T] = traderBalances[msg.sender][
-            token1T
-        ].sub(tokenAmount);
+        traderBalances[msg.sender][tokenPT] = traderBalances[msg.sender][tokenPT].sub(pineAmount);
+        traderBalances[msg.sender][token1T] = traderBalances[msg.sender][token1T].sub(tokenAmount);
 
         // Pine
         if (pineAmount > 0) {
@@ -195,21 +177,11 @@ contract Pool {
         // Make a buy limit order and sell limit order with the calculated market price
         uint256 tradeRatio = getTradeRatio();
         if (tokenAmount > 0) {
-            IExc(dex).makeLimitOrder(
-                token1T,
-                poolToken,
-                tradeRatio,
-                IExc.Side.SELL
-            );
+            IExc(dex).makeLimitOrder(token1T, poolToken, tradeRatio, IExc.Side.SELL);
             sellOrderID = IExc(dex).getLastOrderID();
         }
         if (pineAmount > 0) {
-            IExc(dex).makeLimitOrder(
-                token1T,
-                poolToken,
-                tradeRatio,
-                IExc.Side.BUY
-            );
+            IExc(dex).makeLimitOrder(token1T, poolToken, tradeRatio, IExc.Side.BUY);
             buyOrderID = IExc(dex).getLastOrderID();
         }
     }

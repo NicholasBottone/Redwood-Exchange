@@ -8,12 +8,7 @@ contract Factory {
     address[] public allPairs;
 
     // @notice an event indicating when a pair has been created
-    event PairCreated(
-        address indexed token0,
-        address indexed token1,
-        address pair,
-        uint256
-    );
+    event PairCreated(address indexed token0, address indexed token1, address pair, uint256);
 
     function createPair(
         address tokenA,
@@ -26,9 +21,7 @@ contract Factory {
         // Require conditions
         require(tokenA == quoting, "First token in pair is not quote token");
         require(tokenA != tokenB, "Identical addresses");
-        (address token0, address token1) = tokenA < tokenB
-            ? (tokenA, tokenB)
-            : (tokenB, tokenA);
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         uint256 whichP = tokenA < tokenB ? 1 : 2;
         require(
             tokenA != address(0) &&
@@ -38,8 +31,7 @@ contract Factory {
             "Zero address error"
         );
         require(
-            getPair[token0][token1] == address(0) ||
-                getPair[token1][token0] == address(0),
+            getPair[token0][token1] == address(0) || getPair[token1][token0] == address(0),
             "Pair already exists"
         );
 
