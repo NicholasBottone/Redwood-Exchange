@@ -40,17 +40,16 @@ contract Pool {
     ) external {
         dex = _dex;
 
-        if (whichP == 1) {
-            tokenP = _token0;
-            token1 = _token1;
-            tokenPT = _tickerQ;
-            token1T = _tickerT;
-        } else {
-            tokenP = _token1;
-            token1 = _token0;
-            tokenPT = _tickerT;
-            token1T = _tickerQ;
-        }
+        tokenP = _token0;
+        token1 = _token1;
+        tokenPT = _tickerQ;
+        token1T = _tickerT;
+
+        buyOrderExists = false;
+        sellOrderExists = false;
+
+        poolPine = 0;
+        poolToken = 0;
 
         IExc(dex).addToken(token1T, token1);
         IExc(dex).addToken(tokenPT, tokenP);
