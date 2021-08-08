@@ -170,6 +170,11 @@ contract Exc is IExc {
         emit NewOrder(lastOrderId, ticker, msg.sender, amount, price, now);
     }
 
+    event TestDeleteLimitOrderCalled(uint256 orderId);
+    event TestDeleteLimitOrderExists(uint256 orderId);
+    event TestDeleteLimitOrderDoesNotExist(uint256 orderId);
+    event TestDeleteLimitOrderTraderCorrect(uint256 orderId);
+
     // todo: implement deleteLimitOrder, which will delete a limit order from the orderBook as long as the same trader is deleting
     // it.
     function deleteLimitOrder(
@@ -177,9 +182,18 @@ contract Exc is IExc {
         bytes32 ticker,
         Side side
     ) external tokenExists(ticker) returns (bool) {
-        // check if the trader is deleting the order they created and other info is correct
-        require(orderBook[id].trader == msg.sender);
+        emit TestDeleteLimitOrderCalled(id); // todo: remove this event
+
+        // check if order exists
         if (orderBook[id].side == side && orderBook[id].ticker == ticker) {
+            emit TestDeleteLimitOrderExists(id); // todo: remove this event
+
+            // check if trader is deleting the order
+            require(orderBook[id].trader == msg.sender);
+
+            emit TestDeleteLimitOrderTraderCorrect(id); // todo: remove this event
+
+            // delete the order
             orderBookIds[id] = orderBookIds[orderBookIds.length - 1]; // move the last order to the deleted order's position
             orderBookIds.pop(); // delete the last order (pop goes the weasel)
             delete orderBook[id];
@@ -189,6 +203,7 @@ contract Exc is IExc {
             emit DeleteOrder(id, ticker, msg.sender, now);
             return true;
         }
+        emit TestDeleteLimitOrderDoesNotExist(id); // todo: remove this event
         return false;
     }
 
