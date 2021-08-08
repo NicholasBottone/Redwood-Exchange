@@ -23,6 +23,8 @@ interface IExc {
         uint256 date;
     }
 
+    function getLastOrderID() external view returns (uint256);
+
     function getOrders(bytes32 ticker, Side side)
         external
         view
