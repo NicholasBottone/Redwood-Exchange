@@ -69,10 +69,10 @@ contract Exc is IExc {
     );
 
     /// @notice an event representing all the needed info regarding a deposit on the exchange
-    event Deposit(address indexed trader, uint256 amount, uint256 date);
+    event Deposit(address indexed trader, uint256 amount, bytes32 ticker, uint256 date);
 
     /// @notice an event representing all the needed info regarding a withdrawal on the exchange
-    event Withdrawal(address indexed trader, uint256 amount, uint256 date);
+    event Withdrawal(address indexed trader, uint256 amount, bytes32 ticker, uint256 date);
 
     // Gets the last order ID
     function getLastOrderID() external view returns (uint256) {
@@ -125,15 +125,18 @@ contract Exc is IExc {
     function deposit(uint256 amount, bytes32 ticker) external tokenExists(ticker) {
         IERC20(tokens[ticker].tokenAddress).transferFrom(msg.sender, address(this), amount);
         traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(amount);
-        emit Deposit(msg.sender, amount, now);
+        emit Deposit(msg.sender, amount, ticker, now);
     }
 
     // todo: implement withdraw, which should do the opposite of deposit. The trader should not be able to withdraw more than
     // they have in the exchange.
     function withdraw(uint256 amount, bytes32 ticker) external tokenExists(ticker) {
+        // Check if the trader has enough tokens to withdraw
+        require(traderBalances[msg.sender][ticker] >= amount);
+
         traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(amount);
         IERC20(tokens[ticker].tokenAddress).transfer(msg.sender, amount);
-        emit Withdrawal(msg.sender, amount, now);
+        emit Withdrawal(msg.sender, amount, ticker, now);
     }
 
     // todo: implement makeLimitOrder, which creates a limit order based on the parameters provided. This method should only be
@@ -150,7 +153,7 @@ contract Exc is IExc {
     ) external tokenExists(ticker) notPine(ticker) {
         // check if trader has enough tokens
         if (side == Side.BUY) {
-            traderBalances[msg.sender][PIN].sub(price);
+            traderBalances[msg.sender][PIN].sub(amount.mul(price));
         } else {
             traderBalances[msg.sender][ticker].sub(amount);
         }
@@ -175,11 +178,8 @@ contract Exc is IExc {
         Side side
     ) external tokenExists(ticker) returns (bool) {
         // check if the trader is deleting the order they created and other info is correct
-        if (
-            orderBook[id].trader == msg.sender &&
-            orderBook[id].side == side &&
-            orderBook[id].ticker == ticker
-        ) {
+        require(orderBook[id].trader == msg.sender);
+        if (orderBook[id].side == side && orderBook[id].ticker == ticker) {
             orderBookIds[id] = orderBookIds[orderBookIds.length - 1]; // move the last order to the deleted order's position
             orderBookIds.pop(); // delete the last order (pop goes the weasel)
             delete orderBook[id];
@@ -212,6 +212,16 @@ contract Exc is IExc {
                 uint256 amountToBuy = Math.min(amountLeft, order.amount); // get the amount of tokens to buy
                 uint256 total = order.price.mul(amountToBuy); // get the total price of the order
 
+                // check if the limit order trader has enough tokens to sell
+                if (traderBalances[msg.sender][ticker] < amountToBuy) {
+                    order.amount = 0; // set the order amount to 0 to indicate that the order should be deleted
+                    checkIfOrderFilled(order); // delete order
+                    continue; // skip this order
+                }
+
+                // check if the trader has enough pine to buy
+                require(traderBalances[msg.sender][PIN] >= total);
+
                 // charge/pay the limit order trader
                 traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(
                     amountToBuy
@@ -226,6 +236,7 @@ contract Exc is IExc {
 
                 amountLeft = amountLeft.sub(amountToBuy);
                 order.filled = order.filled.add(amountToBuy);
+                order.amount = order.amount.sub(amountToBuy);
 
                 checkIfOrderFilled(order); // check if the order is completely filled, delete it if it is
 
@@ -243,6 +254,7 @@ contract Exc is IExc {
             }
         } else {
             // if the trader is selling tokens to the exchange
+            require(traderBalances[msg.sender][ticker] >= amount);
 
             while (amountLeft > 0) {
                 // sell tokens to the market until the market order is satisfied
@@ -250,6 +262,13 @@ contract Exc is IExc {
                 Order memory order = getBestOrder(ticker, Side.BUY); // get the best order (by price) for the token on the market
                 uint256 amountToSell = Math.min(amountLeft, order.amount); // get the amount of tokens to sell
                 uint256 total = order.price.mul(amountToSell); // get the total price of the order
+
+                // check if the limit order trader has enough pine to buy
+                if (traderBalances[msg.sender][PIN] < total) {
+                    order.amount = 0; // set the order amount to 0 to indicate that the order should be deleted
+                    checkIfOrderFilled(order); // delete order
+                    continue; // skip this order
+                }
 
                 // charge/pay the limit order trader
                 traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].sub(total);
@@ -265,6 +284,7 @@ contract Exc is IExc {
 
                 amountLeft = amountLeft.sub(amountToSell);
                 order.filled = order.filled.add(amountToSell);
+                order.amount = order.amount.sub(amountToSell);
 
                 checkIfOrderFilled(order); // check if the order is completely filled, delete it if it is
 
@@ -296,7 +316,7 @@ contract Exc is IExc {
 
     // check if the order is filled, if so delete the order from the orderbook
     function checkIfOrderFilled(Order memory order) internal returns (bool) {
-        if (order.filled >= order.amount) {
+        if (order.amount <= 0) {
             // if the order is completely filled, delete it
             orderBookIds[order.id] = orderBookIds[orderBookIds.length - 1];
             orderBookIds.pop();
