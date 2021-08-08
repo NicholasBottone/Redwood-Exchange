@@ -24,6 +24,9 @@ contract Exc is IExc {
     uint256[] public orderBookIds;
     mapping(uint256 => Order) public orderBook;
 
+    // Last order ID
+    uint256 private lastOrderId;
+
     /// @notice an event representing all the needed info regarding a new trade on the exchange
     event NewTrade(
         uint256 tradeId,
@@ -35,6 +38,10 @@ contract Exc is IExc {
         uint256 price,
         uint256 date
     );
+
+    function getLastOrderID() external view returns (uint256) {
+        return lastOrderId;
+    }
 
     // todo: implement getOrders, which simply returns the orders for a specific token on a specific side
     function getOrders(
@@ -139,9 +146,9 @@ contract Exc is IExc {
         }
 
         // create the order
-        uint256 orderId = orderBookIds.length;
+        lastOrderId = orderBookIds.length;
         Order memory order = Order(
-            orderId,
+            lastOrderId,
             msg.sender,
             side,
             ticker,
@@ -150,8 +157,8 @@ contract Exc is IExc {
             price,
             now
         );
-        orderBookIds.push(orderId);
-        orderBook[orderId] = order;
+        orderBookIds.push(lastOrderId);
+        orderBook[lastOrderId] = order;
 
         quickSort(); // sort the orderbook
     }
