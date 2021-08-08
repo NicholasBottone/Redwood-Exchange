@@ -15,6 +15,7 @@ contract Exc is IExc {
     /// interface for more details about orders and sides.
     mapping(bytes32 => Token) public tokens;
     bytes32[] public tokenList;
+    Token[] public tokenArray;
     bytes32 constant PIN = bytes32("PIN"); // pine
 
     // Wallet --> Trader balances by token
@@ -26,6 +27,7 @@ contract Exc is IExc {
 
     // Last order ID
     uint256 private lastOrderId;
+    bool private isInitialized;
 
     // The next trade ID
     uint256 private nextTradeId;
@@ -100,14 +102,7 @@ contract Exc is IExc {
 
     // todo: implement getTokens, which simply returns an array of the tokens currently traded on in the exchange
     function getTokens() external view returns (Token[] memory) {
-        Token[] memory returnTokens;
-
-        for (uint256 i = 0; i < tokenList.length; i++) {
-            Token memory token = tokens[tokenList[i]];
-            returnTokens[returnTokens.length] = token;
-        }
-
-        return returnTokens;
+        return tokenArray;
     }
 
     // todo: implement addToken, which should add the token desired to the exchange by interacting with tokenList and tokens
@@ -117,6 +112,7 @@ contract Exc is IExc {
         }
         tokenList.push(ticker);
         tokens[ticker] = Token(ticker, tokenAddress);
+        tokenArray.push(tokens[ticker]);
     }
 
     // todo: implement deposit, which should deposit a certain amount of tokens from a trader to their on-exchange wallet,
@@ -159,7 +155,11 @@ contract Exc is IExc {
         }
 
         // create the order
-        lastOrderId++;
+        if (isInitialized) {
+            lastOrderId++;
+        } else {
+            isInitialized = true;
+        }
         Order memory order = Order(lastOrderId, msg.sender, side, ticker, amount, 0, price, now);
         orderBookIds.push(lastOrderId);
         orderBook[lastOrderId] = order;
