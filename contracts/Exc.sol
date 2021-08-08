@@ -42,6 +42,33 @@ contract Exc is IExc {
         uint256 date
     );
 
+    /// @notice an event representing all the needed info regarding a new order on the exchange
+    event NewOrder(
+        uint256 orderId,
+        bytes32 indexed ticker,
+        address indexed trader,
+        uint256 amount,
+        uint256 price,
+        uint256 date
+    );
+
+    /// @notice an event representing all the needed info regarding a cancel order on the exchange
+    event DeleteOrder(
+        uint256 orderId,
+        bytes32 indexed ticker,
+        address indexed trader,
+        uint256 date
+    );
+
+    /// @notice an event representing all the needed info regarding a filled limit order on the exchange
+    event FilledLimitOrder(
+        uint256 orderId,
+        bytes32 indexed ticker,
+        address indexed trader,
+        uint256 date
+    );
+
+    // Gets the last order ID
     function getLastOrderID() external view returns (uint256) {
         return lastOrderId;
     }
@@ -124,6 +151,9 @@ contract Exc is IExc {
         orderBook[lastOrderId] = order;
 
         quickSort(); // sort the orderbook
+
+        // fire the event
+        emit NewOrder(lastOrderId, ticker, msg.sender, amount, price, now);
     }
 
     // todo: implement deleteLimitOrder, which will delete a limit order from the orderBook as long as the same trader is deleting
@@ -154,6 +184,9 @@ contract Exc is IExc {
             orderBookIds.pop(); // delete the last order (pop goes the weasel)
             delete orderBook[id];
             quickSort(); // sort the orderbook
+
+            // fire the event
+            emit DeleteOrder(id, ticker, msg.sender, now);
             return true;
         }
         return false;
@@ -255,6 +288,9 @@ contract Exc is IExc {
             orderBookIds.pop();
             delete orderBook[order.id];
             quickSort(); // sort the orderbook
+
+            // emit the event
+            emit FilledLimitOrder(order.id, order.ticker, order.trader, now);
             return true;
         } else {
             // if the order is not completely filled, update it
