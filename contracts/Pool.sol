@@ -1,6 +1,7 @@
 pragma solidity 0.5.3;
 
 import "./Exc.sol";
+// import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/solc-0.6/contracts/math/SafeMath.sol";
 import "../contracts/libraries/math/SafeMath.sol";
 
 contract Pool {
@@ -18,11 +19,6 @@ contract Pool {
     // Pool balances (for tracking the ratio between pine and token)
     uint256 public poolPine;
     uint256 public poolToken;
-
-    // Pool market order IDs
-    bool public ordersExist;
-    uint256 public buyOrderID;
-    uint256 public sellOrderID;
 
     // todo: fill in the initialize method, which should simply set the parameters of the contract correctly. To be called once
     // upon deployment by the factory.
@@ -82,24 +78,15 @@ contract Pool {
             tradeRatio,
             IExc.Side.SELL
         );
-        sellOrderID = IExc(dex).getLastOrderId();
         IExc(dex).makeLimitOrder(
             token1T,
             pineAmount.div(tradeRatio),
             tradeRatio,
             IExc.Side.BUY
         );
-        buyOrderID = IExc(dex).getLastOrderId();
-        ordersExist = true;
     }
 
     function withdraw(uint256 tokenAmount, uint256 pineAmount) external {
-        // Delete old limit orders
-        if (ordersExist) {
-            IExc(dex).deleteLimitOrder(buyOrderID, token1T, IExc.Side.BUY);
-            IExc(dex).deleteLimitOrder(sellOrderID, token1T, IExc.Side.SELL);
-        }
-
         // Approve the Dex to withdraw the amount of Pine and token
         IERC20(tokenP).approve(dex, pineAmount);
         IERC20(token1).approve(dex, tokenAmount);

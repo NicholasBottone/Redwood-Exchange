@@ -24,9 +24,6 @@ contract Exc is IExc {
     uint256[] public orderBookIds;
     mapping(uint256 => Order) public orderBook;
 
-    // Most recent order ID
-    uint256 private lastOrderId;
-
     /// @notice an event representing all the needed info regarding a new trade on the exchange
     event NewTrade(
         uint256 tradeId,
@@ -38,11 +35,6 @@ contract Exc is IExc {
         uint256 price,
         uint256 date
     );
-
-    // Returns the most recent order ID
-    function getLastOrderId() external view returns (uint256) {
-        return lastOrderId;
-    }
 
     // todo: implement getOrders, which simply returns the orders for a specific token on a specific side
     function getOrders(
@@ -86,7 +78,7 @@ contract Exc is IExc {
         // hypothetically done
         bytes32 ticker,
         address tokenAddress
-    ) external {
+    ) external tokenExists(ticker) {
         tokenList.push(ticker);
         tokens[ticker] = Token(ticker, tokenAddress);
     }
@@ -147,9 +139,9 @@ contract Exc is IExc {
         }
 
         // create the order
-        lastOrderId = orderBookIds.length;
+        uint256 orderId = orderBookIds.length;
         Order memory order = Order(
-            lastOrderId,
+            orderId,
             msg.sender,
             side,
             ticker,
@@ -158,8 +150,8 @@ contract Exc is IExc {
             price,
             now
         );
-        orderBookIds.push(lastOrderId);
-        orderBook[lastOrderId] = order;
+        orderBookIds.push(orderId);
+        orderBook[orderId] = order;
 
         quickSort(); // sort the orderbook
     }
@@ -179,19 +171,13 @@ contract Exc is IExc {
         ) {
             // Give a refund to the trader for the order
             if (side == Side.BUY) {
-                uint256 refundedPrice = orderBook[id].price.sub(
-                    orderBook[id].filled.mul(orderBook[id].amount)
-                );
                 traderBalances[msg.sender][PIN] = traderBalances[msg.sender][
                     PIN
-                ].add(refundedPrice);
+                ].add(orderBook[id].price);
             } else {
-                uint256 refundedAmount = orderBook[id].amount.sub(
-                    orderBook[id].filled
-                );
                 traderBalances[msg.sender][ticker] = traderBalances[msg.sender][
                     ticker
-                ].add(refundedAmount);
+                ].add(orderBook[id].amount);
             }
 
             orderBookIds[id] = orderBookIds[orderBookIds.length - 1]; // move the last order to the deleted order's position
@@ -314,16 +300,13 @@ contract Exc is IExc {
     function quickSortHelper(uint256 start, uint256 end) internal {
         if (start < end) {
             // if there is more than one element
-            uint256 pivot = quickSortPartition(start, end); // partition the array
+            uint256 pivot = partition(start, end); // partition the array
             quickSortHelper(start, pivot - 1); // recursively sort the left side
             quickSortHelper(pivot + 1, end); // recursively sort the right side
         }
     }
 
-    function quickSortPartition(uint256 start, uint256 end)
-        internal
-        returns (uint256)
-    {
+    function partition(uint256 start, uint256 end) internal returns (uint256) {
         uint256 pivot = orderBookIds[start];
         uint256 i = start;
         uint256 j = end;
