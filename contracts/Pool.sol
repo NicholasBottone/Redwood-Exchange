@@ -59,11 +59,19 @@ contract Pool {
     // both tokens at the same time
     function deposit(uint256 tokenAmount, uint256 pineAmount) external {
         require(tokenAmount > 0 || pineAmount > 0);
+        require(IERC20(tokenP).balanceOf(msg.sender) >= pineAmount);
+        require(IERC20(token1).balanceOf(msg.sender) >= tokenAmount);
 
         // Pine
         if (pineAmount > 0) {
             // Transfer the deposited amount to this contract
             IERC20(tokenP).transferFrom(msg.sender, address(this), pineAmount);
+
+            // Approve the Dex to deposit the amount of Pine and token
+            IERC20(tokenP).approve(dex, pineAmount);
+
+            // Deposit Pine to the exchange
+            IExc(dex).deposit(pineAmount, tokenPT);
 
             // Update the balances of the wallet
             traderBalances[msg.sender][tokenPT] = traderBalances[msg.sender][
@@ -72,12 +80,6 @@ contract Pool {
 
             // Add to the pool
             poolPine = poolPine.add(pineAmount);
-
-            // Approve the Dex to deposit the amount of Pine and token
-            IERC20(tokenP).approve(dex, pineAmount);
-
-            // Deposit Pine to the exchange
-            IExc(dex).deposit(pineAmount, tokenPT);
         }
 
         // Token
@@ -131,7 +133,7 @@ contract Pool {
         if (pineAmount > 0) {
             IExc(dex).makeLimitOrder(
                 token1T,
-                poolPine.div(tradeRatio),
+                poolToken,
                 tradeRatio,
                 IExc.Side.BUY
             );
@@ -142,8 +144,8 @@ contract Pool {
 
     function withdraw(uint256 tokenAmount, uint256 pineAmount) external {
         // Ensure balances are sufficient
-        require(tokenAmount > traderBalances[msg.sender][token1T]);
-        require(pineAmount > traderBalances[msg.sender][tokenPT]);
+        require(tokenAmount <= traderBalances[msg.sender][token1T]);
+        require(pineAmount <= traderBalances[msg.sender][tokenPT]);
 
         if (tokenAmount > 0) {
             require(sellOrderExists);
@@ -204,7 +206,7 @@ contract Pool {
         if (pineAmount > 0) {
             IExc(dex).makeLimitOrder(
                 token1T,
-                poolPine.div(tradeRatio),
+                poolToken,
                 tradeRatio,
                 IExc.Side.BUY
             );
@@ -218,7 +220,7 @@ contract Pool {
             return 0;
         }
 
-        return poolToken.div(poolPine); // token to pine ratio
+        return poolPine.div(poolToken); // pine to token ratio
     }
 
     function testing(uint256 testMe) public pure returns (uint256) {
