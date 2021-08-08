@@ -107,11 +107,7 @@ contract Exc is IExc {
     {
         traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker]
             .sub(amount);
-        IERC20(tokens[ticker].tokenAddress).transferFrom(
-            address(this),
-            msg.sender,
-            amount
-        );
+        IERC20(tokens[ticker].tokenAddress).transfer(msg.sender, amount);
     }
 
     // todo: implement makeLimitOrder, which creates a limit order based on the parameters provided. This method should only be
