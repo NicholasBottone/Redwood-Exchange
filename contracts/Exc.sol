@@ -105,7 +105,10 @@ contract Exc is IExc {
     }
 
     // todo: implement addToken, which should add the token desired to the exchange by interacting with tokenList and tokens
-    function addToken(bytes32 ticker, address tokenAddress) external tokenExists(ticker) {
+    function addToken(bytes32 ticker, address tokenAddress) external {
+        if (tokens[ticker].tokenAddress != address(0)) {
+            return; // Token already exists
+        }
         tokenList.push(ticker);
         tokens[ticker] = Token(ticker, tokenAddress);
     }
