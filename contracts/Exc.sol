@@ -27,6 +27,9 @@ contract Exc is IExc {
     // Last order ID
     uint256 private lastOrderId;
 
+    // The next trade ID
+    uint256 private nextTradeId;
+
     /// @notice an event representing all the needed info regarding a new trade on the exchange
     event NewTrade(
         uint256 tradeId,
@@ -75,10 +78,7 @@ contract Exc is IExc {
     }
 
     // todo: implement addToken, which should add the token desired to the exchange by interacting with tokenList and tokens
-    function addToken(bytes32 ticker, address tokenAddress)
-        external
-        tokenExists(ticker)
-    {
+    function addToken(bytes32 ticker, address tokenAddress) external tokenExists(ticker) {
         tokenList.push(ticker);
         tokens[ticker] = Token(ticker, tokenAddress);
     }
@@ -86,27 +86,15 @@ contract Exc is IExc {
     // todo: implement deposit, which should deposit a certain amount of tokens from a trader to their on-exchange wallet,
     // based on the wallet data structure you create and the IERC20 interface methods. Namely, you should transfer
     // tokens from the account of the trader on that token to this smart contract, and credit them appropriately
-    function deposit(uint256 amount, bytes32 ticker)
-        external
-        tokenExists(ticker)
-    {
-        IERC20(tokens[ticker].tokenAddress).transferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
-        traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker]
-            .add(amount);
+    function deposit(uint256 amount, bytes32 ticker) external tokenExists(ticker) {
+        IERC20(tokens[ticker].tokenAddress).transferFrom(msg.sender, address(this), amount);
+        traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(amount);
     }
 
     // todo: implement withdraw, which should do the opposite of deposit. The trader should not be able to withdraw more than
     // they have in the exchange.
-    function withdraw(uint256 amount, bytes32 ticker)
-        external
-        tokenExists(ticker)
-    {
-        traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker]
-            .sub(amount);
+    function withdraw(uint256 amount, bytes32 ticker) external tokenExists(ticker) {
+        traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(amount);
         IERC20(tokens[ticker].tokenAddress).transfer(msg.sender, amount);
     }
 
@@ -124,26 +112,14 @@ contract Exc is IExc {
     ) external tokenExists(ticker) notPine(ticker) {
         // charge the trader for the order
         if (side == Side.BUY) {
-            traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN]
-                .sub(price);
+            traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].sub(price);
         } else {
-            traderBalances[msg.sender][ticker] = traderBalances[msg.sender][
-                ticker
-            ].sub(amount);
+            traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(amount);
         }
 
         // create the order
-        lastOrderId = orderBookIds.length;
-        Order memory order = Order(
-            lastOrderId,
-            msg.sender,
-            side,
-            ticker,
-            amount,
-            0,
-            price,
-            now
-        );
+        lastOrderId++;
+        Order memory order = Order(lastOrderId, msg.sender, side, ticker, amount, 0, price, now);
         orderBookIds.push(lastOrderId);
         orderBook[lastOrderId] = order;
 
@@ -165,13 +141,13 @@ contract Exc is IExc {
         ) {
             // Give a refund to the trader for the order
             if (side == Side.BUY) {
-                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][
-                    PIN
-                ].add(orderBook[id].price);
+                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].add(
+                    orderBook[id].price
+                );
             } else {
-                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][
-                    ticker
-                ].add(orderBook[id].amount);
+                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(
+                    orderBook[id].amount
+                );
             }
 
             orderBookIds[id] = orderBookIds[orderBookIds.length - 1]; // move the last order to the deleted order's position
@@ -203,17 +179,27 @@ contract Exc is IExc {
                 uint256 amountToBuy = Math.min(amountLeft, order.amount); // get the amount of tokens to buy
                 uint256 total = order.price.mul(amountToBuy); // get the total price of the order
 
-                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][
-                    PIN
-                ].sub(total);
-                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][
-                    ticker
-                ].add(amountToBuy);
+                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].sub(total);
+                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(
+                    amountToBuy
+                );
 
                 amountLeft = amountLeft.sub(amountToBuy);
                 order.filled = order.filled.add(amountToBuy);
 
                 checkIfOrderFilled(order); // check if the order is completely filled, delete it if it is
+
+                // Emit a NewTrade event
+                emit NewTrade(
+                    nextTradeId++,
+                    order.id,
+                    ticker,
+                    order.trader,
+                    msg.sender,
+                    amountToBuy,
+                    order.price,
+                    now
+                );
             }
         } else {
             // if the trader is selling tokens to the exchange
@@ -225,26 +211,32 @@ contract Exc is IExc {
                 uint256 amountToSell = Math.min(amountLeft, order.amount); // get the amount of tokens to sell
                 uint256 total = order.price.mul(amountToSell); // get the total price of the order
 
-                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][
-                    ticker
-                ].sub(amountToSell);
-                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][
-                    PIN
-                ].add(total);
+                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(
+                    amountToSell
+                );
+                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].add(total);
 
                 amountLeft = amountLeft.sub(amountToSell);
                 order.filled = order.filled.add(amountToSell);
 
                 checkIfOrderFilled(order); // check if the order is completely filled, delete it if it is
+
+                // Emit a NewTrade event
+                emit NewTrade(
+                    nextTradeId++,
+                    order.id,
+                    ticker,
+                    order.trader,
+                    msg.sender,
+                    amountToSell,
+                    order.price,
+                    now
+                );
             }
         }
     }
 
-    function getBestOrder(bytes32 ticker, Side side)
-        internal
-        view
-        returns (Order memory)
-    {
+    function getBestOrder(bytes32 ticker, Side side) internal view returns (Order memory) {
         for (uint256 i = 0; i < orderBookIds.length; i++) {
             // for each order in the orderbook
             Order memory order = orderBook[orderBookIds[i]];
@@ -305,19 +297,13 @@ contract Exc is IExc {
         uint256 i = start;
         uint256 j = end;
         while (true) {
-            while (
-                orderBook[orderBookIds[++i]].price <
-                orderBook[orderBookIds[pivot]].price
-            ) {
+            while (orderBook[orderBookIds[++i]].price < orderBook[orderBookIds[pivot]].price) {
                 // while the left side is smaller than the pivot
                 if (i == end) {
                     break;
                 }
             }
-            while (
-                orderBook[orderBookIds[--j]].price >
-                orderBook[orderBookIds[pivot]].price
-            ) {
+            while (orderBook[orderBookIds[--j]].price > orderBook[orderBookIds[pivot]].price) {
                 // while the right side is larger than the pivot
                 if (j == start) {
                     break;
