@@ -409,7 +409,7 @@ contract Exc is IExc {
     }
 
     function sort() internal {
-        // quickSort();
-        insertionSort();
+        quickSort();
+        // insertionSort();
     }
 }
