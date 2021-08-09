@@ -190,7 +190,7 @@ contract Pool {
     }
 
     function getTradeRatio() internal view returns (uint256) {
-        return poolPine.div(poolToken > 0 ? poolToken : 1); // pine to token ratio
+        return (poolPine > 0 ? poolPine : 1).div(poolToken > 0 ? poolToken : 1); // pine to token ratio
     }
 
     function testing(uint256 testMe) public pure returns (uint256) {
