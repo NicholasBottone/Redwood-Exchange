@@ -234,9 +234,9 @@ contract Exc is IExc {
                     amountToBuy
                 );
 
-                amountLeft = amountLeft.sub(amountToBuy);
-                order.filled = order.filled.add(amountToBuy);
-                order.amount = order.amount.sub(amountToBuy);
+                // amountLeft = amountLeft.sub(amountToBuy);
+                // order.filled = order.filled.add(amountToBuy);
+                // order.amount = order.amount.sub(amountToBuy);
 
                 checkIfOrderFilled(order); // check if the order is completely filled, delete it if it is
 
