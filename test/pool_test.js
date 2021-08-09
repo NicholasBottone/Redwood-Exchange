@@ -16,14 +16,19 @@ contract("Pool", (accounts) => {
     });
 
     it("initialize + deposit", async () => {
-        let factory = await fac.createPair(pin.address, zrx.address, pin.address,
-            exc.address, PIN, ZRX
+        let factory = await fac.createPair(
+            pin.address,
+            zrx.address,
+            pin.address,
+            exc.address,
+            PIN,
+            ZRX
         );
         const pool = await Pool.at(factory.logs[0].args.pair);
         const balance = 1000;
         await pin.mint(trader1, balance);
         await pin.approve(pool.address, balance, { from: trader1 });
-        await pool.deposit(balance, balance, { from: trader1 });
+        await pool.deposit(0, balance, { from: trader1 });
         const poolBalancePIN = await exc.traderBalances.call(pool.address, PIN);
         const poolBalanceZRX = await exc.traderBalances.call(pool.address, ZRX);
         assert.equal(parseInt(poolBalancePIN), balance);
@@ -31,8 +36,13 @@ contract("Pool", (accounts) => {
     });
 
     it("withdraw", async () => {
-        let factory = await fac.createPair(pin.address, zrx.address, pin.address,
-            exc.address, PIN, ZRX
+        let factory = await fac.createPair(
+            pin.address,
+            zrx.address,
+            pin.address,
+            exc.address,
+            PIN,
+            ZRX
         );
         const pool = await Pool.at(factory.logs[0].args.pair);
         const balance = 1000;
@@ -45,6 +55,6 @@ contract("Pool", (accounts) => {
         await pool.withdraw(balance, balance, { from: trader1 });
         const orders2 = await exc.getOrders(ZRX, 0);
         assert.equal(orders1[0].ticker, orders2[0].ticker);
-        assert.ok(orders1[0].price != orders2[0].price);
+        assert.equal(orders1[0].price, orders2[0].price);
     });
 });

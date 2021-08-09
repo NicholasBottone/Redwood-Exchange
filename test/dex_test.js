@@ -60,8 +60,8 @@ contract("Exc", (accounts) => {
         await exc.addToken(PIN, pin.address);
         await pin.mint(trader1, balance);
         await pin.approve(exc.address, balance, { from: trader1 });
-        await pin.deposit(500, PIN, { from: trader1 });
-        await pin.withdraw(500, PIN, { from: trader1 });
+        await exc.deposit(500, PIN, { from: trader1 });
+        await exc.withdraw(500, PIN, { from: trader1 });
         const trader1Balance = await exc.traderBalances.call(trader1, PIN);
         assert.equal(parseInt(trader1Balance), 0);
     });
