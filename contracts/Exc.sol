@@ -21,9 +21,10 @@ contract Exc is IExc {
     // Wallet --> Trader balances by token
     mapping(address => mapping(bytes32 => uint256)) public traderBalances;
 
-    // The orderbook is a list of orders sorted by price.
-    uint256[] public orderBookIds;
-    mapping(uint256 => Order) public orderBook;
+    // The orderBook is a mapping of token ticker to a mapping of trade side to an array of orders sorted by price.
+    // The array is sorted in ascending order for sell orders.
+    // The array is sorted in descending order for buy orders.
+    mapping(bytes32 => mapping(uint8 => Order[])) public orderBook;
 
     // Last order ID
     uint256 private lastOrderId;
@@ -88,16 +89,7 @@ contract Exc is IExc {
         tokenExists(ticker)
         returns (Order[] memory)
     {
-        Order[] memory returnList;
-
-        for (uint256 i = 0; i < orderBookIds.length; i++) {
-            Order memory order = orderBook[orderBookIds[i]];
-            if (order.ticker == ticker && order.side == side) {
-                returnList[returnList.length] = order;
-            }
-        }
-
-        return returnList;
+        return orderBook[ticker][uint8(side)];
     }
 
     // todo: implement getTokens, which simply returns an array of the tokens currently traded on in the exchange
@@ -154,26 +146,20 @@ contract Exc is IExc {
             traderBalances[msg.sender][ticker].sub(amount);
         }
 
-        // create the order
+        // create the order and add it to the orderbook
         if (isInitialized) {
             lastOrderId++;
         } else {
             isInitialized = true;
         }
         Order memory order = Order(lastOrderId, msg.sender, side, ticker, amount, 0, price, now);
-        orderBookIds.push(lastOrderId);
-        orderBook[lastOrderId] = order;
+        orderBook[ticker][uint8(side)].push(order);
 
-        sort(); // sort the orderbook
+        insertionSort(ticker, side); // sort the orderbook
 
         // fire the event
         emit NewOrder(lastOrderId, ticker, msg.sender, amount, price, now);
     }
-
-    event TestDeleteLimitOrderCalled(uint256 orderId);
-    event TestDeleteLimitOrderExists(uint256 orderId);
-    event TestDeleteLimitOrderDoesNotExist(uint256 orderId);
-    event TestDeleteLimitOrderTraderCorrect(uint256 orderId);
 
     // todo: implement deleteLimitOrder, which will delete a limit order from the orderBook as long as the same trader is deleting
     // it.
@@ -182,29 +168,28 @@ contract Exc is IExc {
         bytes32 ticker,
         Side side
     ) external tokenExists(ticker) returns (bool) {
-        emit TestDeleteLimitOrderCalled(id); // todo: remove this event
+        // find the order in the orderbook
+        for (uint256 i = 0; i < orderBook[ticker][uint8(side)].length; i++) {
+            // for each order
+            if (orderBook[ticker][uint8(side)][i].id == id) {
+                // if the order is found
+                // check if the trader is deleting the order
+                require(orderBook[ticker][uint8(side)][i].trader == msg.sender);
 
-        // check if order exists
-        if (orderBook[id].side == side && orderBook[id].ticker == ticker) {
-            emit TestDeleteLimitOrderExists(id); // todo: remove this event
+                // delete the order
+                orderBook[ticker][uint8(side)][i] = orderBook[ticker][uint8(side)][
+                    orderBook[ticker][uint8(side)].length - 1
+                ];
+                orderBook[ticker][uint8(side)].pop();
 
-            // check if trader is deleting the order
-            require(orderBook[id].trader == msg.sender);
+                insertionSort(ticker, side); // sort the orderbook
 
-            emit TestDeleteLimitOrderTraderCorrect(id); // todo: remove this event
-
-            // delete the order
-            orderBookIds[id] = orderBookIds[orderBookIds.length - 1]; // move the last order to the deleted order's position
-            orderBookIds.pop(); // delete the last order (pop goes the weasel)
-            delete orderBook[id];
-            sort(); // sort the orderbook
-
-            // fire the event
-            emit DeleteOrder(id, ticker, msg.sender, now);
-            return true;
+                // fire the event
+                emit DeleteOrder(id, ticker, msg.sender, now);
+                return true;
+            }
         }
-        emit TestDeleteLimitOrderDoesNotExist(id); // todo: remove this event
-        return false;
+        return false; // order not found
     }
 
     // todo: implement makeMarketOrder, which will execute a market order on the current orderbook. The market order need not be
@@ -223,12 +208,12 @@ contract Exc is IExc {
             while (amountLeft > 0) {
                 // buy tokens from the market until the market order is satisified
 
-                Order memory order = getBestOrder(ticker, Side.SELL); // get the best order (by price) for the token on the market
+                Order memory order = getBestOrder(ticker, Side.SELL); // get the best SELL order in the orderbook
                 uint256 amountToBuy = Math.min(amountLeft, order.amount); // get the amount of tokens to buy
                 uint256 total = order.price.mul(amountToBuy); // get the total price of the order
 
                 // check if the limit order trader has enough tokens to sell
-                if (traderBalances[msg.sender][ticker] < amountToBuy) {
+                if (traderBalances[order.trader][ticker] < amountToBuy) {
                     order.amount = 0; // set the order amount to 0 to indicate that the order should be deleted
                     checkIfOrderFilled(order); // delete order
                     continue; // skip this order
@@ -274,12 +259,12 @@ contract Exc is IExc {
             while (amountLeft > 0) {
                 // sell tokens to the market until the market order is satisfied
 
-                Order memory order = getBestOrder(ticker, Side.BUY); // get the best order (by price) for the token on the market
+                Order memory order = getBestOrder(ticker, Side.BUY); // get the best BUY order in the orderbook
                 uint256 amountToSell = Math.min(amountLeft, order.amount); // get the amount of tokens to sell
                 uint256 total = order.price.mul(amountToSell); // get the total price of the order
 
                 // check if the limit order trader has enough pine to buy
-                if (traderBalances[msg.sender][PIN] < total) {
+                if (traderBalances[order.trader][PIN] < total) {
                     order.amount = 0; // set the order amount to 0 to indicate that the order should be deleted
                     checkIfOrderFilled(order); // delete order
                     continue; // skip this order
@@ -318,32 +303,29 @@ contract Exc is IExc {
         }
     }
 
-    function getBestOrder(bytes32 ticker, Side side) internal view returns (Order memory) {
-        for (uint256 i = 0; i < orderBookIds.length; i++) {
-            // for each order in the orderbook
-            Order memory order = orderBook[orderBookIds[i]];
-            if (order.side == side && order.ticker == ticker) {
-                return order;
-            }
-        }
-        require(false); // no order was found
+    // Get the best order in the orderbook for a given side and ticker
+    function getBestOrder(bytes32 ticker, Side side) internal view returns (Order memory order) {
+        require(orderBook[ticker][uint8(side)].length > 0); // make sure there are orders in the orderbook
+        return orderBook[ticker][uint8(side)][0];
     }
 
     // check if the order is filled, if so delete the order from the orderbook
     function checkIfOrderFilled(Order memory order) internal returns (bool) {
         if (order.amount <= 0) {
             // if the order is completely filled, delete it
-            orderBookIds[order.id] = orderBookIds[orderBookIds.length - 1];
-            orderBookIds.pop();
-            delete orderBook[order.id];
-            sort(); // sort the orderbook
+            orderBook[order.ticker][uint8(order.side)][0] = orderBook[order.ticker][
+                uint8(order.side)
+            ][orderBook[order.ticker][uint8(order.side)].length - 1];
+            orderBook[order.ticker][uint8(order.side)].pop();
+
+            insertionSort(order.ticker, order.side); // sort the orderbook
 
             // emit the event
             emit FilledLimitOrder(order.id, order.ticker, order.trader, now);
             return true;
         } else {
             // if the order is not completely filled, update it
-            orderBook[order.id] = order;
+            orderBook[order.ticker][uint8(order.side)][0] = order;
             return false;
         }
     }
@@ -362,69 +344,35 @@ contract Exc is IExc {
         _;
     }
 
-    // Quick Sort the orderBookIds array by price
-    function quickSort() internal {
-        uint256 length = orderBookIds.length;
-        quickSortHelper(0, length - 1); // start recursion
-    }
-
-    function quickSortHelper(uint256 start, uint256 end) internal {
-        if (start < end) {
-            // if there is more than one element
-            uint256 pivot = partition(start, end); // partition the array
-            quickSortHelper(start, pivot - 1); // recursively sort the left side
-            quickSortHelper(pivot + 1, end); // recursively sort the right side
-        }
-    }
-
-    function partition(uint256 start, uint256 end) internal returns (uint256) {
-        uint256 pivot = orderBookIds[start];
-        uint256 i = start;
-        uint256 j = end;
-        while (true) {
-            while (orderBook[orderBookIds[++i]].price < orderBook[orderBookIds[pivot]].price) {
-                // while the left side is smaller than the pivot
-                if (i == end) {
-                    break;
+    // Sort the orderbook for a given ticker and side by price in ascending order for sell orders and in descending order for buy orders.
+    // Uses insertion sort and sorts in place.
+    function insertionSort(bytes32 ticker, Side side) internal {
+        if (side == Side.SELL) {
+            // For sell orders, sort in ascending order
+            for (uint256 i = 1; i < orderBook[ticker][uint8(side)].length; i++) {
+                // for each order in the orderbook
+                Order memory order = orderBook[ticker][uint8(side)][i];
+                uint256 j = i;
+                while (j > 0 && order.price > orderBook[ticker][uint8(side)][j - 1].price) {
+                    // while the price is greater than the previous order
+                    orderBook[ticker][uint8(side)][j] = orderBook[ticker][uint8(side)][j - 1];
+                    j--;
                 }
+                orderBook[ticker][uint8(side)][j] = order;
             }
-            while (orderBook[orderBookIds[--j]].price > orderBook[orderBookIds[pivot]].price) {
-                // while the right side is larger than the pivot
-                if (j == start) {
-                    break;
+        } else {
+            // For buy orders, sort in descending order
+            for (uint256 i = 1; i < orderBook[ticker][uint8(side)].length; i++) {
+                // for each order in the orderbook
+                Order memory order = orderBook[ticker][uint8(side)][i];
+                uint256 j = i;
+                while (j > 0 && order.price < orderBook[ticker][uint8(side)][j - 1].price) {
+                    // while the price is less than the previous order
+                    orderBook[ticker][uint8(side)][j] = orderBook[ticker][uint8(side)][j - 1];
+                    j--;
                 }
-            }
-            if (i >= j) {
-                break;
-            }
-            uint256 temp = orderBookIds[i];
-            orderBookIds[i] = orderBookIds[j];
-            orderBookIds[j] = temp;
-        }
-        uint256 temp = orderBookIds[i];
-        orderBookIds[i] = orderBookIds[end];
-        orderBookIds[end] = temp;
-        return i;
-    }
-
-    // Insertion Sort the orderBookIds array by price
-    function insertionSort() internal {
-        uint256 length = orderBookIds.length;
-        for (uint256 i = 1; i < length; i++) {
-            uint256 j = i;
-            while (
-                j > 0 && orderBook[orderBookIds[j - 1]].price > orderBook[orderBookIds[j]].price
-            ) {
-                uint256 temp = orderBookIds[j];
-                orderBookIds[j] = orderBookIds[j - 1];
-                orderBookIds[j - 1] = temp;
-                j--;
+                orderBook[ticker][uint8(side)][j] = order;
             }
         }
-    }
-
-    function sort() internal {
-        // quickSort();
-        insertionSort();
     }
 }
