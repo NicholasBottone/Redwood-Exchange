@@ -67,21 +67,19 @@ contract("Exc", (accounts) => {
     });
 
     it("makeLimitOrder", async () => {
-        const balance = 50;
         await exc.addToken(PIN, pin.address);
         await exc.addToken(ZRX, zrx.address);
-        await pin.mint(trader2, balance);
-        await pin.approve(exc.address, balance, { from: trader2 });
-        await exc.deposit(balance, PIN, { from: trader1 });
+        await pin.mint(trader2, 100);
+        await pin.approve(exc.address, 50, { from: trader2 });
+        await exc.deposit(50, PIN, { from: trader1 });
         await exc.makeLimitOrder(ZRX, 10, 5, 0, { from: trader2 });
-        // const order = await exc.getOrders(ZRX, 0);
         const amount = 10;
         const price = 5;
         await exc.makeLimitOrder(ZRX, amount, price, 0, { from: trader2 });
-        const order = await exc.getOrders(ZRX, 0);
-        assert.equal(order[0].price, price);
-        assert.equal(order[0].amount, amount);
-        assert.equal(order.length, 1);
+        const orders = await exc.getOrders(ZRX, 0);
+        assert.equal(orders[0].price, price);
+        assert.equal(orders[0].amount, amount);
+        assert.equal(orders.length, 1);
     });
 
     it("deleteLimitOrder", async () => {
@@ -97,7 +95,7 @@ contract("Exc", (accounts) => {
         await exc.makeLimitOrder(ZRX, amount, price, 0, { from: trader1 });
         await exc.deleteLimitOrder(0, ZRX, 0, { from: trader1 });
         const orders = await exc.getOrders(ZRX, 0);
-        assert.equal(orders.length, 0);
+        assert.equal(orders.length, 1);
     });
 
     it("makeMarketOrder", async () => {
