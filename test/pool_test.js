@@ -16,7 +16,10 @@ contract("Pool", (accounts) => {
     });
 
     it("initialize + deposit", async () => {
-        const pool = await Pool.at(log.args.pair);
+        let factory = await fac.createPair(pin.address, zrx.address, pin.address,
+            exc.address, PIN, ZRX
+        );
+        const pool = await Pool.at(factory.logs[0].args.pair);
         const balance = 1000;
         await pin.mint(trader1, balance);
         await pin.approve(pool.address, balance, { from: trader1 });
@@ -28,6 +31,10 @@ contract("Pool", (accounts) => {
     });
 
     it("withdraw", async () => {
+        let factory = await fac.createPair(pin.address, zrx.address, pin.address,
+            exc.address, PIN, ZRX
+        );
+        const pool = await Pool.at(factory.logs[0].args.pair);
         const balance = 1000;
         await pin.mint(trader1, balance);
         pin.approve(pool.address, balance, { from: trader1 });
