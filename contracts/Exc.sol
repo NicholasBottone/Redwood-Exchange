@@ -155,7 +155,7 @@ contract Exc is IExc {
         Order memory order = Order(lastOrderId, msg.sender, side, ticker, amount, 0, price, now);
         orderBook[ticker][uint8(side)].push(order);
 
-        insertionSort(ticker, side); // sort the orderbook
+        bubbleSort(ticker, side); // sort the orderbook
 
         // fire the event
         emit NewOrder(lastOrderId, ticker, msg.sender, amount, price, now);
@@ -182,7 +182,7 @@ contract Exc is IExc {
                 ];
                 orderBook[ticker][uint8(side)].pop();
 
-                insertionSort(ticker, side); // sort the orderbook
+                bubbleSort(ticker, side); // sort the orderbook
 
                 // fire the event
                 emit DeleteOrder(id, ticker, msg.sender, now);
@@ -318,7 +318,7 @@ contract Exc is IExc {
             ][orderBook[order.ticker][uint8(order.side)].length - 1];
             orderBook[order.ticker][uint8(order.side)].pop();
 
-            insertionSort(order.ticker, order.side); // sort the orderbook
+            bubbleSort(order.ticker, order.side); // sort the orderbook
 
             // emit the event
             emit FilledLimitOrder(order.id, order.ticker, order.trader, now);
@@ -345,33 +345,41 @@ contract Exc is IExc {
     }
 
     // Sort the orderbook for a given ticker and side by price in ascending order for sell orders and in descending order for buy orders.
-    // Uses insertion sort and sorts in place.
-    function insertionSort(bytes32 ticker, Side side) internal {
+    // Uses bubble sort and sorts in place.
+    function bubbleSort(bytes32 ticker, Side side) internal {
         if (side == Side.SELL) {
-            // For sell orders, sort in ascending order
-            for (uint256 i = 1; i < orderBook[ticker][uint8(side)].length; i++) {
-                // for each order in the orderbook
-                Order memory order = orderBook[ticker][uint8(side)][i];
-                uint256 j = i;
-                while (j > 0 && order.price > orderBook[ticker][uint8(side)][j - 1].price) {
-                    // while the price is greater than the previous order
-                    orderBook[ticker][uint8(side)][j] = orderBook[ticker][uint8(side)][j - 1];
-                    j--;
+            // Sell orders are sorted in ascending order by price
+            for (uint256 i = 0; i < orderBook[ticker][uint8(side)].length; i++) {
+                // for each order
+                for (uint256 j = 0; j < orderBook[ticker][uint8(side)].length - i - 1; j++) {
+                    // for each order after the current order
+                    if (
+                        orderBook[ticker][uint8(side)][j].price >
+                        orderBook[ticker][uint8(side)][j + 1].price
+                    ) {
+                        // if the price of the current order is greater than the price of the next order, swap
+                        Order memory temp = orderBook[ticker][uint8(side)][j];
+                        orderBook[ticker][uint8(side)][j] = orderBook[ticker][uint8(side)][j + 1];
+                        orderBook[ticker][uint8(side)][j + 1] = temp;
+                    }
                 }
-                orderBook[ticker][uint8(side)][j] = order;
             }
         } else {
-            // For buy orders, sort in descending order
-            for (uint256 i = 1; i < orderBook[ticker][uint8(side)].length; i++) {
-                // for each order in the orderbook
-                Order memory order = orderBook[ticker][uint8(side)][i];
-                uint256 j = i;
-                while (j > 0 && order.price < orderBook[ticker][uint8(side)][j - 1].price) {
-                    // while the price is less than the previous order
-                    orderBook[ticker][uint8(side)][j] = orderBook[ticker][uint8(side)][j - 1];
-                    j--;
+            // Buy orders are sorted in descending order by price
+            for (uint256 i = 0; i < orderBook[ticker][uint8(side)].length; i++) {
+                // for each order
+                for (uint256 j = 0; j < orderBook[ticker][uint8(side)].length - i - 1; j++) {
+                    // for each order after the current order
+                    if (
+                        orderBook[ticker][uint8(side)][j].price <
+                        orderBook[ticker][uint8(side)][j + 1].price
+                    ) {
+                        // if the price of the current order is less than the price of the next order, swap
+                        Order memory temp = orderBook[ticker][uint8(side)][j];
+                        orderBook[ticker][uint8(side)][j] = orderBook[ticker][uint8(side)][j + 1];
+                        orderBook[ticker][uint8(side)][j + 1] = temp;
+                    }
                 }
-                orderBook[ticker][uint8(side)][j] = order;
             }
         }
     }
