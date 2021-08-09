@@ -223,10 +223,10 @@ contract Exc is IExc {
                 require(traderBalances[msg.sender][PIN] >= total);
 
                 // charge/pay the limit order trader
-                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(
+                traderBalances[order.trader][ticker] = traderBalances[order.trader][ticker].sub(
                     amountToBuy
                 );
-                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].add(total);
+                traderBalances[order.trader][PIN] = traderBalances[order.trader][PIN].add(total);
 
                 // charge/pay the market order trader
                 traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].sub(total);
@@ -234,9 +234,9 @@ contract Exc is IExc {
                     amountToBuy
                 );
 
-                // amountLeft = amountLeft.sub(amountToBuy);
-                // order.filled = order.filled.add(amountToBuy);
-                // order.amount = order.amount.sub(amountToBuy);
+                amountLeft = amountLeft.sub(amountToBuy);
+                order.filled = order.filled.add(amountToBuy);
+                order.amount = order.amount.sub(amountToBuy);
 
                 checkIfOrderFilled(order); // check if the order is completely filled, delete it if it is
 
@@ -271,8 +271,8 @@ contract Exc is IExc {
                 }
 
                 // charge/pay the limit order trader
-                traderBalances[msg.sender][PIN] = traderBalances[msg.sender][PIN].sub(total);
-                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].add(
+                traderBalances[order.trader][PIN] = traderBalances[order.trader][PIN].sub(total);
+                traderBalances[order.trader][ticker] = traderBalances[order.trader][ticker].add(
                     amountToSell
                 );
 
